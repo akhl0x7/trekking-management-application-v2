@@ -1,0 +1,5 @@
+body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.nav-link.active { color: #fff !important; }
+.card { border: 0; }
+.metric { font-size: 2rem; font-weight: 700; }
+.hero { background: linear-gradient(135deg, #111827, #374151); color: #fff; }

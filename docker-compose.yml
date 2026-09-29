@@ -1,0 +1,63 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ADMIN_EMAIL: admin@tma.local
+      ADMIN_PASSWORD: Admin@12345
+      SECRET_KEY: development-secret
+    volumes:
+      - ./backend/instance:/app/instance
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    command: sh -c "python -m flask --app run.py init-db && python -m flask --app run.py seed && python run.py"
+
+  celery-worker:
+    build: ./backend
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ADMIN_EMAIL: admin@tma.local
+      ADMIN_PASSWORD: Admin@12345
+      SECRET_KEY: development-secret
+    volumes:
+      - ./backend/instance:/app/instance
+    depends_on:
+      - redis
+      - backend
+    command: celery -A app.celery_runner.celery worker --loglevel=INFO
+
+  celery-beat:
+    build: ./backend
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ADMIN_EMAIL: admin@tma.local
+      ADMIN_PASSWORD: Admin@12345
+      SECRET_KEY: development-secret
+    volumes:
+      - ./backend/instance:/app/instance
+    depends_on:
+      - redis
+      - backend
+    command: celery -A app.celery_runner.celery beat --loglevel=INFO
+
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_TARGET: http://backend:5000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
